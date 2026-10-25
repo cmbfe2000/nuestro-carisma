@@ -194,7 +194,6 @@ function renderSidebar(cur) {
     ${IDX.sections.map((s, i) => l('#/s/' + i, s.i, s.t, s.n, 's' + i)).join('')}
     <div class="side-h">Explorar</div>
     ${l('#/temas', 'tag', 'Temas', null, 'temas')}
-    ${l('#/timeline', 'timeline', 'Línea de tiempo', null, 'timeline')}
     ${l('#/ajustes', 'gear', 'Ajustes', null, 'ajustes')}
   </div>`;
 }
@@ -240,7 +239,6 @@ async function viewHome() {
     <div class="h2"><h2>Secciones</h2></div>
     <div class="secgrid">${IDX.sections.map((s, i) => `<a class="card sec" href="#/s/${i}"><span class="ic">${icon(s.i)}</span><em>${s.n}</em><b>${esc(s.t)}</b><small>${esc(s.s)}</small></a>`).join('')}
       <a class="card sec" href="#/temas"><span class="ic">${icon('tag')}</span><b>Temas</b><small>Índice temático de ${Object.keys(IDX.tags).length} temas</small></a>
-      <a class="card sec" href="#/timeline"><span class="ic">${icon('timeline')}</span><b>Línea de tiempo</b><small>La historia del IVE desde 1981</small></a>
     </div>
     <div class="h2"><h2>Últimas publicaciones</h2><a href="#/recientes">Ver todas →</a></div>
     <div class="card"><div class="list" style="padding:0 14px">${recent.map(([k]) => itemRow(k, { where: true })).join('')}</div></div>
@@ -274,7 +272,6 @@ function viewSections() {
   view.innerHTML = `<div class="wrap fade-in"><div class="sechead"><div><div class="eyebrow">Índice</div><h1 class="title">Secciones</h1><p class="lede">Todo el contenido de nuestrocarisma.org, ordenado como en la web.</p></div></div>
     <div class="secgrid">${IDX.sections.map((s, i) => `<a class="card sec" href="#/s/${i}"><span class="ic">${icon(s.i)}</span><em>${s.n}</em><b>${esc(s.t)}</b><small>${esc(s.s)}</small></a>`).join('')}
     <a class="card sec" href="#/temas"><span class="ic">${icon('tag')}</span><b>Temas</b><small>Índice temático</small></a>
-    <a class="card sec" href="#/timeline"><span class="ic">${icon('timeline')}</span><b>Línea de tiempo</b><small>Historia del IVE</small></a>
     <a class="card sec" href="#/recientes"><span class="ic">${icon('refresh')}</span><b>Recientes</b><small>Todo, por fecha de publicación</small></a></div></div>`;
 }
 
@@ -288,7 +285,6 @@ function viewSection(si, sort) {
     const flush = () => { if (run.length) { html += `<div class="list"${depth ? '' : ' style="padding:0 14px"'}>${run.join('')}</div>`; run = []; } };
     items.forEach(it => {
       if (it.g) { flush(); html += `<details class="card group"${openAll || depth ? ' open' : ''}><summary>${icon('chev')}<b>${esc(it.t)}</b><em>${countIn(it.g)}</em></summary>${renderItems(it.g, depth + 1)}</details>`; }
-      else if (it.timeline) run.push(`<a class="item" href="#/timeline"><div class="body"><div class="it-t">${esc(it.t)}</div><div class="it-m">${IDX.timeline.length} acontecimientos, 1981–hoy</div></div><span class="chev">${icon('chev')}</span></a>`);
       else if (it.ext) run.push(extRow(it));
       else if (it.id != null) run.push(itemRow(it.id, { t: it.t, x: false }));
     });
@@ -682,7 +678,6 @@ async function route() {
   if (a === 'guardados') return viewSaved(params);
   if (a === 'temas') return viewTemas();
   if (a === 'tema') return viewTema(b);
-  if (a === 'timeline') return viewTimeline();
   if (a === 'ajustes') return viewSettings();
   viewNotFound();
 }
