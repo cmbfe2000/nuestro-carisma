@@ -1,12 +1,12 @@
 /* Service worker — Nuestro Carisma. VERSION lines are stamped by tools/build.py */
 const DATA = 'f00cb98ef5';
-const SHELL = '5bebafc804';
+const SHELL = 'c91bdc211e';
 const SHELL_CACHE = 'nc-shell-' + SHELL;
 const DATA_CACHE = 'nc-data-' + DATA;
 const IMG_CACHE = 'nc-img';
 const SHELL_FILES = [
   './', 'index.html', 'styles.css', 'app.js', 'search-worker.js', 'manifest.webmanifest',
-  'icons/icon.svg', 'icons/mark-light.svg', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png',
+  'icons/icon.svg', 'icons/mark-light.png', 'icons/logo.png', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png',
   'fonts/source-serif-4-latin-400-normal.woff2', 'fonts/source-serif-4-latin-400-italic.woff2',
   'fonts/source-serif-4-latin-600-normal.woff2', 'fonts/source-serif-4-latin-600-italic.woff2',
   'fonts/cormorant-garamond-latin-500-normal.woff2', 'fonts/cormorant-garamond-latin-500-italic.woff2',
