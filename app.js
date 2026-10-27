@@ -391,7 +391,77 @@ async function viewReader(id, params) {
   readerCleanup = () => removeEventListener('scroll', onScroll);
 }
 
+// Unify footnotes: every source format (Word [1], superscript, plain number, bold, WordPress list)
+// becomes the same superscript reference + the same "Notas" list.
+function normalizeFootnotes(prose) {
+  const REF = /^(?:_?ftn\d+|_?edn\d+|sdfootnote\d+sym|post-\d+-footnote-\d+)$/i;
+  const BACK = /^(?:_?ftnref\d+|_?ednref\d+|sdfootnote\d+anc)$/i;
+  const num = s => (s.match(/(\d+)(?!.*\d)/) || [''])[0];
+  // some pages carry absolute links (site / local file) ending in #_ftnN: make them in-page
+  $$('a[href*="#"]:not([href^="#"])', prose).forEach(a => {
+    const f = decodeURIComponent(a.getAttribute('href').split('#').pop());
+    if ((REF.test(f) || BACK.test(f)) && /^\s*\[?\s*\d*\s*\]?\s*$/.test(a.textContent)) a.setAttribute('href', '#' + f);
+  });
+  // note texts (list at the end)
+  $$('a[href^="#"]', prose).forEach(a => {
+    const f = decodeURIComponent(a.getAttribute('href').slice(1));
+    if (!BACK.test(f) || !/^\s*\[?\s*\d*\s*\]?\s*$/.test(a.textContent)) return;
+    const p = a.closest('p'); if (!p) return;
+    const r = document.createRange(); r.setStart(p, 0); r.setEndBefore(a);
+    if (r.toString().trim()) return;
+    const n = num(f);
+    const nm = document.createElement('a');
+    nm.className = 'fnnum'; nm.href = a.getAttribute('href'); nm.textContent = n;
+    const name = a.getAttribute('name') || a.id || f.replace(/ref(\d+)$/i, '$1').replace(/anc$/i, 'sym'); nm.setAttribute('name', name);
+    let w = a; while (w.parentElement && w.parentElement !== p && w.parentElement.childNodes.length === 1) w = w.parentElement;
+    w.replaceWith(nm);
+    $$('sup:empty', p).forEach(x => x.remove());
+    const d = document.createElement('div'); d.className = 'fndef';
+    const body = document.createElement('div'); body.className = 'fnbody';
+    while (p.firstChild) { if (p.firstChild === nm) { p.removeChild(nm); continue; } body.append(p.firstChild); }
+    body.innerHTML = body.innerHTML.replace(/^(\s|&nbsp;|<sup>[\u0000-\u001f\s]*<\/sup>)+/, '');
+    d.append(nm, body); p.replaceWith(d);
+  });
+  // WordPress footnote lists: <ol><li id="…footnote-N">
+  $$('ol', prose).forEach(ol => {
+    const lis = [...ol.children].filter(li => li.tagName === 'LI');
+    if (!lis.length || !lis.every(li => /footnote-\d+$/i.test(li.id))) return;
+    const frag = document.createDocumentFragment();
+    lis.forEach(li => {
+      const n = num(li.id);
+      const nm = document.createElement('a');
+      nm.className = 'fnnum'; nm.textContent = n; nm.id = li.id;
+      nm.href = '#' + li.id.replace(/footnote-(\d+)$/i, 'footnote-ref-$1');
+      const body = document.createElement('div'); body.className = 'fnbody';
+      body.innerHTML = li.children.length === 1 && li.firstElementChild.tagName === 'P' ? li.firstElementChild.innerHTML : li.innerHTML;
+      const d = document.createElement('div'); d.className = 'fndef'; d.append(nm, body);
+      frag.append(d);
+    });
+    ol.replaceWith(frag);
+  });
+  // in-text references
+  $$('a[href^="#"]', prose).forEach(a => {
+    if (a.classList.contains('fnnum')) return;
+    const f = decodeURIComponent(a.getAttribute('href').slice(1));
+    if (!REF.test(f) || !/^\s*\[?\s*\d+\s*\]?\s*$/.test(a.textContent)) return;
+    const n = num(a.textContent);
+    a.className = 'fn'; a.removeAttribute('target'); a.removeAttribute('rel'); a.removeAttribute('title');
+    a.innerHTML = '<sup>' + n + '</sup>';
+    while (a.parentElement && a.parentElement.tagName === 'SUP' && a.parentElement.childNodes.length === 1) a.parentElement.replaceWith(a);
+  });
+  // group consecutive notes under one heading
+  $$('.fndef', prose).forEach(d => {
+    if (d.closest('.fnlist')) return;
+    const run = [d]; let n = d.nextElementSibling;
+    while (n && n.classList.contains('fndef')) { run.push(n); n = n.nextElementSibling; }
+    const sec = document.createElement('section'); sec.className = 'fnlist';
+    const h = document.createElement('div'); h.className = 'fnhead'; h.textContent = 'Notas';
+    d.before(sec); sec.append(h, ...run);
+  });
+}
+
 function enhanceProse(prose) {
+  normalizeFootnotes(prose);
   // YouTube cards
   $$('.m-yt', prose).forEach(el => {
     const yt = el.dataset.yt;
@@ -407,11 +477,9 @@ function enhanceProse(prose) {
     e.preventDefault();
     const t = prose.querySelector(`[name="${CSS.escape(h)}"],[id="${CSS.escape(h)}"]`);
     if (!t) return;
-    const isNote = /ftn\d/i.test(h) && !/ftnref/i.test(h) || /^_?edn\d/i.test(h);
-    if (isNote) {
-      const block = t.closest('p,li,div') || t.parentElement;
-      const c = block.cloneNode(true);
-      $$('a[href^="#_ftnref"],a[href^="#_ednref"]', c).forEach(x => x.remove());
+    const def = t.closest('.fndef');
+    if (def && !a.classList.contains('fnnum')) {
+      const c = def.querySelector('.fnbody').cloneNode(true);
       const num = (a.textContent.match(/\d+/) || [''])[0];
       sheet(`<div class="fnref">Nota ${esc(num)}</div><div class="fntext">${c.innerHTML}</div>`, (b, close) => {
         $$('a[href^="#"]', b).forEach(x => x.onclick = ev => { ev.preventDefault(); close(); });

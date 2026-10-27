@@ -190,8 +190,14 @@ h1.title{font-family:var(--display);font-weight:600;font-size:clamp(34px,6vw,50p
 .prose h5,.prose h6{font-size:1em;letter-spacing:.02em}
 .prose a{color:var(--accent);text-decoration-thickness:1px;text-underline-offset:2px}
 .prose sup{font-size:.62em;line-height:0}
-.prose a[href^="#_ftn"],.prose a.fn{text-decoration:none;font-family:var(--sans);font-weight:600;padding:0 1px}
-.prose a[href^="#_ftnref"]{font-size:.85em}
+.prose a.fn{text-decoration:none;font-family:var(--sans);font-weight:600;padding:0 1px}
+.prose a.fn sup{font-size:.7em;line-height:0}
+.prose .fnlist{margin-top:2.2em;padding-top:.9em;border-top:1px solid var(--line);font-size:.82em;line-height:1.5;color:var(--ink2)}
+.prose .fnhead{font-family:var(--sans);font-size:.78em;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);font-weight:600;margin-bottom:.6em}
+.prose .fndef{display:flex;gap:.6em;margin:0 0 .5em}
+.prose .fnnum{flex:none;min-width:1.6em;font-family:var(--sans);font-weight:600;font-size:.9em;color:var(--accent);text-decoration:none}
+.prose .fnnum::after{content:"."}
+.prose .fnbody{min-width:0}
 .prose img{max-width:100%;height:auto;border-radius:10px;display:block;margin:1.2em auto}
 .prose ol,.prose ul{padding-left:1.4em;margin:0 0 1em}
 .prose li{margin:.25em 0}
