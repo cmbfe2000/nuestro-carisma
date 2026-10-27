@@ -1,5 +1,5 @@
 /* Service worker — Nuestro Carisma. VERSION lines are stamped by tools/build.py */
-const DATA = 'b03a419af2';
+const DATA = 'f00cb98ef5';
 const SHELL = 'ffd826f8fb';
 const SHELL_CACHE = 'nc-shell-' + SHELL;
 const DATA_CACHE = 'nc-data-' + DATA;
