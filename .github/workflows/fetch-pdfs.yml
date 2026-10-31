@@ -1,0 +1,54 @@
+name: Fetch PDFs (one-time, for conversion testing)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download every PDF referenced by the app
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import re, glob, json, os, time, hashlib
+          from urllib.request import Request, urlopen
+          urls = set()
+          for f in glob.glob('data/c/*.html'):
+              urls |= set(re.findall(r'href="([^"]+?\.pdf)"', open(f, encoding='utf-8').read(), re.I))
+          def walk(items):
+              for it in items:
+                  if str(it.get('ext', '')).lower().endswith('.pdf'):
+                      urls.add(it['ext'])
+                  walk(it.get('g', []))
+          for s in json.load(open('data/index.json'))['sections']:
+              walk(s['items'])
+          os.makedirs('/tmp/pdfs', exist_ok=True)
+          manifest = {}
+          for u in sorted(urls):
+              name = hashlib.sha1(u.encode()).hexdigest()[:12] + '.pdf'
+              for attempt in range(3):
+                  try:
+                      with urlopen(Request(u, headers={'User-Agent': 'NuestroCarisma-app/1.0'}), timeout=120) as r:
+                          open('/tmp/pdfs/' + name, 'wb').write(r.read())
+                      manifest[u] = name
+                      break
+                  except Exception as e:
+                      print('retry', u, e); time.sleep(3)
+          json.dump(manifest, open('/tmp/pdfs/manifest.json', 'w'), indent=1)
+          print(len(manifest), 'of', len(urls), 'downloaded')
+          PY
+      - name: Save to branch pdf-src
+        shell: bash
+        run: |
+          cd /tmp/pdfs
+          git init -q -b pdf-src
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A && git commit -qm "Source PDFs"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" pdf-src
