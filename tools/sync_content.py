@@ -140,7 +140,7 @@ def replace_file(path, data):
             os.unlink(name)
 
 
-def run(root, posts, dry_run=False):
+def run(root, posts, dry_run=False, refresh_existing=False):
     index_path = root / 'data/index.json'
     index = json.loads(index_path.read_text())
     search = json.loads((root / 'data/search.json').read_text())
@@ -155,7 +155,10 @@ def run(root, posts, dry_run=False):
             raise ValueError('Invalid post ID')
         old = index['docs'].get(pid)
         modified = post['modified_gmt']
-        if old and modified <= old.get('m', baseline):
+        # Existing articles are curated locally (Directorios from the Derecho IVE
+        # texts, local images, full texts replacing PDFs). WordPress re-touches old
+        # posts often, so by default only NEW posts are imported.
+        if old and (not refresh_existing or modified <= old.get('m', baseline)):
             continue
         cleaner = Cleaner(post['link'])
         cleaner.feed(post['content']['rendered'])
@@ -227,5 +230,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--root', type=Path, default=Path.cwd())
     parser.add_argument('--dry-run', action='store_true')
+    parser.add_argument('--refresh-existing', action='store_true',
+                        help='also re-import existing posts modified on the website '
+                             '(overwrites local edits to those articles)')
     args = parser.parse_args()
-    run(args.root, fetch_posts(), args.dry_run)
+    run(args.root, fetch_posts(), args.dry_run, args.refresh_existing)
